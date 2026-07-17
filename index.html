@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>証拠品分析課 ｜ データ探偵事務所</title>
+<style>
+  :root{
+    --ink:#0C1E2E; --line:rgba(150,205,245,.28); --line2:rgba(150,205,245,.55);
+    --paper:#DCEBF7; --dim:#7FA6C2;
+    --red:#E03A3A; --amber:#EFB02E; --calm:#4FA8D8; --green:#4FD8A8;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Courier New",monospace;
+    --gothic:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ink);
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:28px 28px;
+    color:var(--paper);font-family:var(--gothic);font-size:14px;line-height:1.6;-webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 80px}
+  header{border:1px solid var(--line2);background:rgba(12,30,46,.9);padding:18px 20px;margin-bottom:18px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.28em;color:var(--dim);margin:0}
+  h1{margin:4px 0 6px;font-size:24px;letter-spacing:.12em;font-weight:600}
+  header p{margin:0;color:var(--dim);font-size:12.5px}
+  .panel{border:1px solid var(--line2);background:rgba(18,41,60,.85);margin-bottom:16px}
+  .panel>h2{margin:0;padding:9px 14px;font-size:12px;letter-spacing:.2em;font-family:var(--mono);border-bottom:1px solid var(--line);color:var(--dim);font-weight:500}
+  .panel .body{padding:14px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:middle}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--dim);font-weight:500;white-space:nowrap}
+  td.num,th.num{text-align:right;font-family:var(--mono)}
+  input,select{width:100%;background:rgba(12,30,46,.9);border:1px solid var(--line);color:var(--paper);font-family:var(--gothic);font-size:13px;padding:4px 5px;border-radius:0}
+  input[type=file]{padding:6px;font-family:var(--mono);font-size:11px}
+  input[type=checkbox]{width:auto}
+  input:focus,select:focus,button:focus{outline:2px solid var(--calm);outline-offset:1px}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  button{background:transparent;border:1px solid var(--line2);color:var(--paper);font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;padding:7px 12px;cursor:pointer}
+  button:hover{background:rgba(79,168,216,.16)}
+  button.go{border-color:var(--calm);color:#BFE6FF;background:rgba(79,168,216,.12)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  .fld label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--dim);margin-bottom:3px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
+  .kpi{border:1px solid var(--line);padding:9px 11px;background:rgba(10,24,38,.7)}
+  .kpi .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--dim)}
+  .kpi .v{font-family:var(--mono);font-size:20px;line-height:1.25}
+  .kpi .s{font-size:10.5px;color:var(--dim)}
+  .bar{height:7px;background:rgba(150,205,245,.14);position:relative;display:block;min-width:60px}
+  .bar>i{display:block;height:100%}
+  .why{color:var(--dim);font-size:12px;margin:6px 0 0}
+  .hint{color:var(--dim);font-size:11.5px;margin:8px 0 0;font-family:var(--mono)}
+  code.k{font-family:var(--mono);color:var(--calm)}
+  .alert{border-left:3px solid var(--amber);background:rgba(239,176,46,.1);padding:9px 12px;margin-bottom:12px;font-size:12.5px}
+  .alert.bad{border-color:var(--red);background:rgba(224,58,58,.1)}
+  .canvasbox{background:#0A1826;border:1px solid var(--line);overflow-x:auto}
+  svg{display:block}
+  .tag{font-family:var(--mono);font-size:10px;letter-spacing:.16em;border:1px solid currentColor;padding:1px 6px;white-space:nowrap}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:4px 12px;margin-top:6px}
+  .cols label{display:flex;gap:6px;align-items:center;font-size:12.5px;padding:2px 0;cursor:pointer}
+  .cols .no{color:#5C7D96}
+  #busy{display:none;color:var(--calm);font-family:var(--mono);font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">FILE No.010 ／ データ探偵事務所</p>
+  <h1>証拠品分析課 — ばらつきの出どころ</h1>
+  <p>実測ログを持ち込む。「時間が長い工程」ではなく「リードタイムを暴れさせている工程」を、合計100%になる形で名指しする。</p>
+</header>
+
+<div class="panel">
+  <h2>1. 証拠品（CSV）</h2>
+  <div class="body">
+    <div class="grid">
+      <div class="fld"><label>CSVファイル</label><input type="file" id="file" accept=".csv,.txt" onchange="onFile(event)"></div>
+      <div class="fld"><label>文字コード</label>
+        <select id="enc"><option value="auto">自動判定</option><option value="utf-8">UTF-8</option><option value="shift_jis">Shift_JIS</option></select>
+      </div>
+    </div>
+    <div class="row">
+      <button type="button" onclick="loadSample()">サンプル（採用ログ300件）</button>
+      <span id="fileinfo" style="color:var(--dim);font-family:var(--mono);font-size:11.5px"></span>
+    </div>
+    <p class="hint">1行 = 1案件。列 = 各工程にかかった時間。ファイルはブラウザ内だけで処理され、どこにも送信されない。</p>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>2. 列の指定</h2>
+  <div class="body" id="mapping"><p class="why">CSVを読み込むと、ここに列が並ぶ。</p></div>
+</div>
+
+<div class="panel">
+  <h2>3. 鑑定結果</h2>
+  <div class="body" id="result"><p class="why">分析すると、ここに出る。</p></div>
+</div>
+
+</div>
+
+<script>
+var HEAD = [], ROWS = [], NUMERIC = [];
+var LAST = null;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtMin(m){
+  if (!isFinite(m)) return '—';
+  var a = Math.abs(m);
+  if (a < 90) return m.toFixed(0) + '分';
+  if (a < 60*48) return (m/60).toFixed(1) + 'h';
+  return (m/1440).toFixed(1) + '日';
+}
+
+/* ---------- stats（Nodeで恒等式を検証済み） ---------- */
+function mean(a){ var s=0, i; for(i=0;i<a.length;i++) s+=a[i]; return s/a.length; }
+function cov(a,b){
+  var ma=mean(a), mb=mean(b), s=0, i;
+  for(i=0;i<a.length;i++) s += (a[i]-ma)*(b[i]-mb);
+  return s/(a.length-1);
+}
+function vari(a){ return cov(a,a); }
+function sd(a){ return Math.sqrt(vari(a)); }
+function corr(a,b){ var d = Math.sqrt(vari(a)*vari(b)); return d > 0 ? cov(a,b)/d : 0; }
+function quantile(sorted, p){
+  if (!sorted.length) return 0;
+  return sorted[Math.min(sorted.length-1, Math.floor(sorted.length*p))];
+}
+/* Y=ΣXi のとき Σ Cov(Xi,Y)/Var(Y) = 1（厳密） */
+function decompose(cols, Y){
+  var vy = vari(Y), out = [], i;
+  for (i=0;i<cols.length;i++) out.push(vy > 0 ? cov(cols[i],Y)/vy : 0);
+  return out;
+}
+/* 遅い群平均 − 速い群平均 を工程ごとに分解（合計＝Yの差、厳密） */
+function dissect(cols, Y, q){
+  var idx = [], i, j;
+  for (i=0;i<Y.length;i++) idx.push(i);
+  idx.sort(function(a,b){ return Y[a]-Y[b]; });
+  var k = Math.max(1, Math.round(idx.length*q));
+  var fast = idx.slice(0,k), slow = idx.slice(idx.length-k);
+  var out = [];
+  for (i=0;i<cols.length;i++){
+    var sf=0, ss=0;
+    for (j=0;j<k;j++){ sf += cols[i][fast[j]]; ss += cols[i][slow[j]]; }
+    out.push(ss/k - sf/k);
+  }
+  var dy = 0;
+  for (j=0;j<k;j++) dy += Y[slow[j]] - Y[fast[j]];
+  return { diff: out, dy: dy/k, k: k };
+}
+/* ブートストラップ：分散寄与の95%信頼区間 */
+function bootstrap(cols, isSum, yCol, B){
+  var n = cols[0].length, k = cols.length, out = [], i, j, b;
+  for (i=0;i<k;i++) out.push([]);
+  var seed = 20260718;
+  var rnd = function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  for (b=0;b<B;b++){
+    var pick = [];
+    for (i=0;i<n;i++) pick.push(Math.floor(rnd()*n));
+    var rc = [], ry = [];
+    for (i=0;i<k;i++) rc.push([]);
+    for (i=0;i<n;i++){
+      var p = pick[i], s = 0;
+      for (j=0;j<k;j++){ rc[j].push(cols[j][p]); s += cols[j][p]; }
+      ry.push(isSum ? s : yCol[p]);
+    }
+    var d = decompose(rc, ry);
+    for (j=0;j<k;j++) out[j].push(d[j]);
+  }
+  var ci = [];
+  for (j=0;j<k;j++){
+    out[j].sort(function(a,b2){ return a-b2; });
+    ci.push([ quantile(out[j],0.025), quantile(out[j],0.975) ]);
+  }
+  return ci;
+}
+/* 相関行列を反転 → 標準化偏回帰β = R⁻¹ rxy 、 VIFj = (R⁻¹)jj */
+function invert(M){
+  var n = M.length, A = [], i, j, k;
+  for (i=0;i<n;i++){
+    A.push([]);
+    for (j=0;j<n;j++) A[i].push(M[i][j]);
+    for (j=0;j<n;j++) A[i].push(i === j ? 1 : 0);
+  }
+  for (i=0;i<n;i++){
+    var p = i;
+    for (k=i+1;k<n;k++) if (Math.abs(A[k][i]) > Math.abs(A[p][i])) p = k;
+    if (Math.abs(A[p][i]) < 1e-10) return null;
+    var t = A[i]; A[i] = A[p]; A[p] = t;
+    var d = A[i][i];
+    for (j=0;j<2*n;j++) A[i][j] /= d;
+    for (k=0;k<n;k++){
+      if (k === i) continue;
+      var f = A[k][i];
+      if (f === 0) continue;
+      for (j=0;j<2*n;j++) A[k][j] -= f*A[i][j];
+    }
+  }
+  var R = [];
+  for (i=0;i<n;i++) R.push(A[i].slice(n));
+  return R;
+}
+function regress(cols, Y){
+  var k = cols.length, R = [], rxy = [], i, j;
+  for (i=0;i<k;i++){
+    R.push([]);
+    for (j=0;j<k;j++) R[i].push(corr(cols[i],cols[j]));
+    rxy.push(corr(cols[i],Y));
+  }
+  var Ri = invert(R);
+  if (!Ri) return { singular: true, R: R, rxy: rxy };
+  var b = [], r2 = 0, vif = [];
+  for (i=0;i<k;i++){
+    var s = 0;
+    for (j=0;j<k;j++) s += Ri[i][j]*rxy[j];
+    b.push(s); r2 += s*rxy[i]; vif.push(Ri[i][i]);
+  }
+  return { singular: false, beta: b, r2: r2, vif: vif, rxy: rxy, R: R };
+}
+
+/* ---------- CSV ---------- */
+function parseCsv(text){
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  var rows = [], row = [], cur = '', q = false, i = 0;
+  while (i < text.length){
+    var c = text[i];
+    if (q){
+      if (c === '"'){
+        if (text[i+1] === '"'){ cur += '"'; i += 2; continue; }
+        q = false; i++; continue;
+      }
+      cur += c; i++; continue;
+    }
+    if (c === '"'){ q = true; i++; continue; }
+    if (c === ','){ row.push(cur); cur = ''; i++; continue; }
+    if (c === '\r'){ i++; continue; }
+    if (c === '\n'){ row.push(cur); rows.push(row); row = []; cur = ''; i++; continue; }
+    cur += c; i++;
+  }
+  if (cur !== '' || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(function(r){ return r.length > 1 || (r[0] || '').trim() !== ''; });
+}
+function toNum(v){
+  if (v === null || v === undefined) return NaN;
+  var s = String(v).replace(/[,\s　]/g,'');
+  if (s === '') return NaN;
+  var n = parseFloat(s);
+  return isFinite(n) ? n : NaN;
+}
+function ingest(rows){
+  if (rows.length < 2){ alert('データ行が足りない。'); return; }
+  HEAD = rows[0].map(function(h,i){ return (h || '').trim() || ('列' + (i+1)); });
+  ROWS = rows.slice(1);
+  NUMERIC = [];
+  for (var c=0;c<HEAD.length;c++){
+    var ok = 0, tot = 0;
+    for (var r=0;r<ROWS.length;r++){
+      var v = ROWS[r][c];
+      if (v === undefined || String(v).trim() === '') continue;
+      tot++;
+      if (!isNaN(toNum(v))) ok++;
+    }
+    NUMERIC.push(tot > 0 && ok/tot >= 0.8);
+  }
+  document.getElementById('fileinfo').textContent = ROWS.length + '行 × ' + HEAD.length + '列を読み込んだ（数値列 ' + NUMERIC.filter(Boolean).length + '）';
+  renderMapping();
+  document.getElementById('result').innerHTML = '<p class="why">列を確認して「鑑定する」を押してほしい。</p>';
+}
+function onFile(e){
+  var f = e.target.files && e.target.files[0];
+  if (!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    var buf = fr.result, want = document.getElementById('enc').value, text = null;
+    function dec(enc, fatal){
+      try { return new TextDecoder(enc, { fatal: !!fatal }).decode(buf); } catch(err){ return null; }
+    }
+    if (want === 'auto'){
+      text = dec('utf-8', true);
+      if (text === null) text = dec('shift_jis', false);
+      if (text === null) text = dec('utf-8', false);
+    } else {
+      text = dec(want, false);
+    }
+    if (text === null){ alert('文字コードを判別できなかった。手動で指定してほしい。'); return; }
+    ingest(parseCsv(text));
+  };
+  fr.onerror = function(){ alert('ファイルを読めなかった。'); };
+  fr.readAsArrayBuffer(f);
+}
+
+/* ---------- mapping UI ---------- */
+function renderMapping(){
+  var h = '<div class="grid"><div class="fld"><label>分析モード</label>'
+    + '<select id="mode" onchange="renderMapping2()">'
+    + '<option value="sum">分解モード：選んだ工程列の合計をリードタイムとする</option>'
+    + '<option value="target">目的変数モード：別の列を成果とする</option>'
+    + '</select></div>'
+    + '<div class="fld" id="tgtbox" style="display:none"><label>目的変数の列</label><select id="target"></select></div>'
+    + '</div>';
+  h += '<p class="hint" style="margin-top:10px">工程の列（数値）を選ぶ：</p><div class="cols">';
+  for (var i=0;i<HEAD.length;i++){
+    h += '<label' + (NUMERIC[i] ? '' : ' class="no"') + '>'
+      + '<input type="checkbox" class="colchk" value="' + i + '"' + (NUMERIC[i] ? ' checked' : ' disabled') + '>'
+      + esc(HEAD[i]) + (NUMERIC[i] ? '' : ' <span style="font-size:10px">(非数値)</span>') + '</label>';
+  }
+  h += '</div>';
+  h += '<div class="row"><button type="button" class="go" onclick="kick()">鑑定する</button>'
+    + '<button type="button" onclick="checkAll(true)">全選択</button>'
+    + '<button type="button" onclick="checkAll(false)">全解除</button>'
+    + '<span id="busy">計算中…</span></div>';
+  document.getElementById('mapping').innerHTML = h;
+  var t = document.getElementById('target'), o = '';
+  for (var j=0;j<HEAD.length;j++){ if (NUMERIC[j]) o += '<option value="' + j + '">' + esc(HEAD[j]) + '</option>'; }
+  t.innerHTML = o;
+}
+function renderMapping2(){
+  document.getElementById('tgtbox').style.display = document.getElementById('mode').value === 'target' ? 'block' : 'none';
+}
+function checkAll(v){
+  var cs = document.querySelectorAll('.colchk');
+  for (var i=0;i<cs.length;i++) if (!cs[i].disabled) cs[i].checked = v;
+}
+
+/* ---------- run ---------- */
+function kick(){
+  document.getElementById('busy').style.display = 'inline';
+  setTimeout(analyze, 30);
+}
+function analyze(){
+  var mode = document.getElementById('mode').value;
+  var picked = [], cs = document.querySelectorAll('.colchk'), i, j;
+  for (i=0;i<cs.length;i++) if (cs[i].checked) picked.push(parseInt(cs[i].value,10));
+  var tIdx = mode === 'target' ? parseInt(document.getElementById('target').value,10) : -1;
+  if (mode === 'target') picked = picked.filter(function(p){ return p !== tIdx; });
+  if (picked.length < 2){ document.getElementById('busy').style.display = 'none'; alert('工程の列を2つ以上選んでほしい。'); return; }
+
+  // 欠損行を落とす
+  var cols = [], Y = [], dropped = 0;
+  for (i=0;i<picked.length;i++) cols.push([]);
+  for (var r=0;r<ROWS.length;r++){
+    var vals = [], ok = true;
+    for (i=0;i<picked.length;i++){
+      var v = toNum(ROWS[r][picked[i]]);
+      if (isNaN(v)){ ok = false; break; }
+      vals.push(v);
+    }
+    var yv = 0;
+    if (ok && mode === 'target'){
+      yv = toNum(ROWS[r][tIdx]);
+      if (isNaN(yv)) ok = false;
+    }
+    if (!ok){ dropped++; continue; }
+    for (i=0;i<picked.length;i++) cols[i].push(vals[i]);
+    if (mode === 'sum'){ var s = 0; for (i=0;i<vals.length;i++) s += vals[i]; Y.push(s); }
+    else Y.push(yv);
+  }
+  var n = Y.length;
+  if (n < 10){ document.getElementById('busy').style.display = 'none'; alert('有効な行が' + n + '件しかない。10件以上ほしい。'); return; }
+
+  var names = picked.map(function(p){ return HEAD[p]; });
+  LAST = { mode: mode, names: names, cols: cols, Y: Y, n: n, dropped: dropped, yName: mode === 'target' ? HEAD[tIdx] : 'リードタイム（合計）' };
+  render();
+  document.getElementById('busy').style.display = 'none';
+}
+
+/* ---------- charts ---------- */
+function scatterPlot(names, occ, contrib){
+  var W = 660, H = 400, padL = 54, padB = 42, padT = 16, padR = 14;
+  var mx = 0, i;
+  for (i=0;i<names.length;i++){ mx = Math.max(mx, occ[i]*100, contrib[i]*100); }
+  var lo = 0, hi = Math.ceil(Math.max(10, mx*1.15)/10)*10;
+  var minC = 0;
+  for (i=0;i<names.length;i++) minC = Math.min(minC, contrib[i]*100);
+  if (minC < 0) lo = Math.floor(minC*1.2/10)*10;
+  var X = function(v){ return padL + (v-lo)/(hi-lo) * (W-padL-padR); };
+  var Yp = function(v){ return H-padB - (v-lo)/(hi-lo) * (H-padT-padB); };
+  var o = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" font-family="ui-monospace,Menlo,monospace">'];
+  o.push('<rect width="' + W + '" height="' + H + '" fill="#0A1826"/>');
+  for (var g=lo; g<=hi; g+=10){
+    o.push('<line x1="' + X(g) + '" y1="' + padT + '" x2="' + X(g) + '" y2="' + (H-padB) + '" stroke="#96CDF5" stroke-opacity=".1"/>');
+    o.push('<line x1="' + padL + '" y1="' + Yp(g) + '" x2="' + (W-padR) + '" y2="' + Yp(g) + '" stroke="#96CDF5" stroke-opacity=".1"/>');
+    o.push('<text x="' + X(g) + '" y="' + (H-padB+15) + '" fill="#7FA6C2" font-size="9" text-anchor="middle">' + g + '</text>');
+    o.push('<text x="' + (padL-6) + '" y="' + (Yp(g)+3) + '" fill="#7FA6C2" font-size="9" text-anchor="end">' + g + '</text>');
+  }
+  // 公平線 y = x
+  o.push('<line x1="' + X(lo) + '" y1="' + Yp(lo) + '" x2="' + X(hi) + '" y2="' + Yp(hi) + '" stroke="#4FA8D8" stroke-dasharray="5 4" stroke-opacity=".8"/>');
+  o.push('<text x="' + (X(hi)-6) + '" y="' + (Yp(hi)+26) + '" fill="#4FA8D8" font-size="9.5" text-anchor="end">公平線：占有率どおりのばらつき</text>');
+  o.push('<text x="' + (padL+8) + '" y="' + (padT+13) + '" fill="#E03A3A" font-size="10">▲ この上 ＝ 暴れ馬（短いのに暴れる）</text>');
+  o.push('<text x="' + (W-padR-6) + '" y="' + (H-padB-8) + '" fill="#4FD8A8" font-size="10" text-anchor="end">この下 ＝ 重いが安定 ▼</text>');
+  for (i=0;i<names.length;i++){
+    var x = X(occ[i]*100), y = Yp(contrib[i]*100);
+    var wild = contrib[i] > occ[i];
+    var c = wild ? '#E03A3A' : '#4FD8A8';
+    o.push('<circle cx="' + x + '" cy="' + y + '" r="6" fill="' + c + '" fill-opacity=".35" stroke="' + c + '" stroke-width="1.5"/>');
+    var anchor = x > W*0.7 ? 'end' : 'start', dx = x > W*0.7 ? -10 : 10;
+    o.push('<text x="' + (x+dx) + '" y="' + (y+4) + '" fill="#DCEBF7" font-size="10.5" text-anchor="' + anchor + '" font-family="sans-serif">' + esc(names[i]) + '</text>');
+  }
+  o.push('<text x="' + (W/2) + '" y="' + (H-6) + '" fill="#7FA6C2" font-size="10" text-anchor="middle">平均占有率 %  →  かかっている時間の割合</text>');
+  o.push('<text x="14" y="' + (H/2) + '" fill="#7FA6C2" font-size="10" text-anchor="middle" transform="rotate(-90 14 ' + (H/2) + ')">分散寄与率 %  →  ばらつきの犯人度</text>');
+  o.push('</svg>');
+  return '<div class="canvasbox">' + o.join('') + '</div>';
+}
+function heatmap(names, R){
+  var k = names.length, cell = 34, padL = 118, padT = 88;
+  var W = padL + k*cell + 12, H = padT + k*cell + 12;
+  var o = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" font-family="ui-monospace,Menlo,monospace">'];
+  o.push('<rect width="' + W + '" height="' + H + '" fill="#0A1826"/>');
+  var i, j;
+  for (i=0;i<k;i++){
+    o.push('<text x="' + (padL-6) + '" y="' + (padT + i*cell + cell/2 + 4) + '" fill="#DCEBF7" font-size="10.5" text-anchor="end" font-family="sans-serif">' + esc(names[i]) + '</text>');
+    o.push('<text x="' + (padL + i*cell + cell/2) + '" y="' + (padT-8) + '" fill="#DCEBF7" font-size="10.5" text-anchor="start" font-family="sans-serif" transform="rotate(-55 ' + (padL + i*cell + cell/2) + ' ' + (padT-8) + ')">' + esc(names[i]) + '</text>');
+  }
+  for (i=0;i<k;i++){
+    for (j=0;j<k;j++){
+      var v = R[i][j];
+      var col = v >= 0 ? '224,58,58' : '79,168,216';
+      var op = Math.min(0.85, Math.abs(v)*0.85);
+      o.push('<rect x="' + (padL + j*cell) + '" y="' + (padT + i*cell) + '" width="' + (cell-1) + '" height="' + (cell-1) + '" fill="rgba(' + col + ',' + op.toFixed(2) + ')" stroke="#96CDF5" stroke-opacity=".18"/>');
+      if (i !== j) o.push('<text x="' + (padL + j*cell + cell/2) + '" y="' + (padT + i*cell + cell/2 + 3.5) + '" fill="' + (Math.abs(v) > 0.55 ? '#fff' : '#9FC4DD') + '" font-size="9" text-anchor="middle">' + (v >= 0 ? '' : '−') + Math.abs(v).toFixed(2).slice(1) + '</text>');
+    }
+  }
+  o.push('</svg>');
+  return '<div class="canvasbox">' + o.join('') + '</div>';
+}
+
+/* ---------- render ---------- */
+function render(){
+  var d = LAST, i;
+  var el = document.getElementById('result');
+  var Ys = d.Y.slice().sort(function(a,b){ return a-b; });
+  var h = '';
+  if (d.dropped > 0) h += '<div class="alert">数値として読めない値があった ' + d.dropped + ' 行を除外して、' + d.n + '行で鑑定した。</div>';
+
+  h += '<div class="kpis">'
+    + '<div class="kpi"><div class="l">CASES</div><div class="v">' + d.n + '</div><div class="s">有効な案件数</div></div>'
+    + '<div class="kpi"><div class="l">' + esc(d.yName) + ' 平均</div><div class="v">' + fmtMin(mean(d.Y)) + '</div><div class="s">—</div></div>'
+    + '<div class="kpi"><div class="l">標準偏差</div><div class="v" style="color:var(--amber)">' + fmtMin(sd(d.Y)) + '</div><div class="s">ばらつきの大きさ</div></div>'
+    + '<div class="kpi"><div class="l">P50 / P90</div><div class="v" style="font-size:16px">' + fmtMin(quantile(Ys,0.5)) + ' / ' + fmtMin(quantile(Ys,0.9)) + '</div><div class="s">中央値と上位1割</div></div>'
+    + '</div>';
+
+  var R = [];
+  for (i=0;i<d.cols.length;i++){ R.push([]); for (var j2=0;j2<d.cols.length;j2++) R[i].push(corr(d.cols[i],d.cols[j2])); }
+
+  if (d.mode === 'sum'){
+    var contrib = decompose(d.cols, d.Y);
+    var my = mean(d.Y), occ = [], i2;
+    for (i2=0;i2<d.cols.length;i2++) occ.push(my > 0 ? mean(d.cols[i2])/my : 0);
+    var B = d.n > 3000 ? 150 : 300;
+    var ci = bootstrap(d.cols, true, null, B);
+
+    var ord = [];
+    for (i=0;i<d.names.length;i++) ord.push(i);
+    ord.sort(function(a,b){ return contrib[b]-contrib[a]; });
+    var top = ord[0];
+
+    h += '<p class="why" style="margin-bottom:10px"><span class="tag" style="color:var(--red)">最重要容疑者</span> '
+      + '<strong style="font-size:16px;color:#FFD9D9">' + esc(d.names[top]) + '</strong> — '
+      + 'リードタイムのばらつきの <code class="k">' + (contrib[top]*100).toFixed(1) + '%</code> がこの工程から出ている。'
+      + '時間の占有率は <code class="k">' + (occ[top]*100).toFixed(1) + '%</code> なので、'
+      + (contrib[top] > occ[top] ? '<strong>占有率の割に暴れすぎている</strong>。平均を削るより、まずばらつきを止めるべき対象。' : '占有率どおりの寄与。ばらつきより平均そのものが問題。')
+      + '</p>';
+
+    h += '<div class="scroll"><table><tr><th>順</th><th>工程</th><th class="num">平均</th><th class="num">占有%</th><th class="num">SD</th><th class="num">相関r</th><th class="num">分散寄与%</th><th class="num">95%CI</th><th style="min-width:100px"></th></tr>';
+    var mxc = 0;
+    for (i=0;i<contrib.length;i++) mxc = Math.max(mxc, Math.abs(contrib[i]));
+    for (var q=0;q<ord.length;q++){
+      var k2 = ord[q];
+      var wild = contrib[k2] > occ[k2];
+      var c = q === 0 ? 'var(--red)' : wild ? 'var(--amber)' : 'var(--calm)';
+      h += '<tr>'
+        + '<td style="font-family:var(--mono);color:var(--dim)">' + (q+1) + '</td>'
+        + '<td>' + esc(d.names[k2]) + (wild ? ' <span class="tag" style="color:var(--amber)">暴れ馬</span>' : '') + '</td>'
+        + '<td class="num">' + fmtMin(mean(d.cols[k2])) + '</td>'
+        + '<td class="num" style="color:var(--dim)">' + (occ[k2]*100).toFixed(1) + '</td>'
+        + '<td class="num" style="color:var(--dim)">' + fmtMin(sd(d.cols[k2])) + '</td>'
+        + '<td class="num">' + corr(d.cols[k2],d.Y).toFixed(2) + '</td>'
+        + '<td class="num" style="color:' + c + '">' + (contrib[k2]*100).toFixed(1) + '</td>'
+        + '<td class="num" style="color:var(--dim);font-size:11px">' + (ci[k2][0]*100).toFixed(1) + ' 〜 ' + (ci[k2][1]*100).toFixed(1) + '</td>'
+        + '<td><span class="bar"><i style="width:' + (mxc > 0 ? Math.abs(contrib[k2])/mxc*100 : 0) + '%;background:' + c + '"></i></span></td>'
+        + '</tr>';
+    }
+    var tot = 0;
+    for (i=0;i<contrib.length;i++) tot += contrib[i];
+    h += '<tr><td colspan="6" style="color:var(--dim);font-family:var(--mono);font-size:11px">合計（恒等式の検算）</td>'
+      + '<td class="num" style="color:var(--green)">' + (tot*100).toFixed(1) + '</td><td colspan="2"></td></tr>';
+    h += '</table></div>';
+    h += '<p class="hint">分散寄与% = Cov(工程, リードタイム) ÷ Var(リードタイム)。リードタイムが各工程の合計である限り、合計は必ず100%になる。CIは' + B + '回のブートストラップ。CIが0をまたぐ工程は「たまたま」の可能性がある。</p>';
+
+    h += '<div style="margin-top:14px">' + scatterPlot(d.names, occ, contrib) + '</div>';
+
+    var ds = dissect(d.cols, d.Y, 0.25);
+    h += '<h3 style="font-size:13px;letter-spacing:.14em;font-family:var(--mono);color:var(--dim);margin:20px 0 8px;font-weight:500">遅延の解剖 — 遅い25% は速い25% より ' + fmtMin(ds.dy) + ' 遅い。その内訳</h3>';
+    var ord2 = [];
+    for (i=0;i<d.names.length;i++) ord2.push(i);
+    ord2.sort(function(a,b){ return ds.diff[b]-ds.diff[a]; });
+    h += '<div class="scroll"><table><tr><th>工程</th><th class="num">遅い群の平均</th><th class="num">速い群の平均</th><th class="num">差</th><th class="num">遅れの何%</th><th style="min-width:100px"></th></tr>';
+    var mxd = 0;
+    for (i=0;i<ds.diff.length;i++) mxd = Math.max(mxd, Math.abs(ds.diff[i]));
+    var idxS = [];
+    for (i=0;i<d.Y.length;i++) idxS.push(i);
+    idxS.sort(function(a,b){ return d.Y[a]-d.Y[b]; });
+    var kk = ds.k;
+    for (var w=0;w<ord2.length;w++){
+      var m2 = ord2[w], sf = 0, ss = 0;
+      for (i=0;i<kk;i++){ sf += d.cols[m2][idxS[i]]; ss += d.cols[m2][idxS[idxS.length-kk+i]]; }
+      var share = ds.dy !== 0 ? ds.diff[m2]/ds.dy*100 : 0;
+      var c2 = w === 0 ? 'var(--red)' : 'var(--calm)';
+      h += '<tr><td>' + esc(d.names[m2]) + '</td>'
+        + '<td class="num" style="color:var(--dim)">' + fmtMin(ss/kk) + '</td>'
+        + '<td class="num" style="color:var(--dim)">' + fmtMin(sf/kk) + '</td>'
+        + '<td class="num" style="color:' + c2 + '">' + (ds.diff[m2] >= 0 ? '+' : '') + fmtMin(ds.diff[m2]) + '</td>'
+        + '<td class="num" style="color:' + c2 + '">' + share.toFixed(1) + '%</td>'
+        + '<td><span class="bar"><i style="width:' + (mxd > 0 ? Math.abs(ds.diff[m2])/mxd*100 : 0) + '%;background:' + c2 + '"></i></span></td></tr>';
+    }
+    h += '</table></div>';
+    h += '<p class="hint">各工程の差を足すと、ちょうどリードタイムの差になる（厳密な分解）。「遅い案件が遅い理由」を工程に割り振った表。営業資料に一番効くのはこの表。</p>';
+
+  } else {
+    var rg = regress(d.cols, d.Y);
+    if (rg.singular){
+      h += '<div class="alert bad"><strong>列が完全に重複している。</strong>ある工程列が他の列の完全な足し算・複製になっているため、偏回帰係数を計算できない。重複した列を外してほしい。</div>';
+    } else {
+      var maxVif = 0;
+      for (i=0;i<rg.vif.length;i++) maxVif = Math.max(maxVif, rg.vif[i]);
+      if (maxVif >= 10){
+        h += '<div class="alert"><strong>多重共線性が強い（最大VIF ' + maxVif.toFixed(1) + '）。</strong>'
+          + '工程どうしが連動しているため、βの「どの工程が」の割り振りは信用しないほうがいい。単相関rと、下の遅延の解剖を主に読んでほしい。</div>';
+      }
+      var ord3 = [];
+      for (i=0;i<d.names.length;i++) ord3.push(i);
+      ord3.sort(function(a,b){ return Math.abs(rg.beta[b])-Math.abs(rg.beta[a]); });
+      h += '<p class="why" style="margin-bottom:10px">'
+        + '<code class="k">' + esc(d.yName) + '</code> のばらつきのうち、選んだ工程で説明できるのは <code class="k">R² = ' + (rg.r2*100).toFixed(1) + '%</code>。'
+        + '残りの ' + ((1-rg.r2)*100).toFixed(1) + '% は、この表に入っていない要因。</p>';
+      h += '<div class="scroll"><table><tr><th>順</th><th>工程</th><th class="num">平均</th><th class="num">単相関r</th><th class="num">標準化β</th><th class="num">VIF</th><th style="min-width:100px"></th></tr>';
+      var mxb = 0;
+      for (i=0;i<rg.beta.length;i++) mxb = Math.max(mxb, Math.abs(rg.beta[i]));
+      for (var z=0;z<ord3.length;z++){
+        var k3 = ord3[z];
+        var c3 = z === 0 ? 'var(--red)' : rg.beta[k3] < 0 ? 'var(--calm)' : 'var(--amber)';
+        h += '<tr><td style="font-family:var(--mono);color:var(--dim)">' + (z+1) + '</td>'
+          + '<td>' + esc(d.names[k3]) + '</td>'
+          + '<td class="num" style="color:var(--dim)">' + fmtMin(mean(d.cols[k3])) + '</td>'
+          + '<td class="num">' + rg.rxy[k3].toFixed(2) + '</td>'
+          + '<td class="num" style="color:' + c3 + '">' + rg.beta[k3].toFixed(3) + '</td>'
+          + '<td class="num" style="color:' + (rg.vif[k3] >= 10 ? 'var(--red)' : 'var(--dim)') + '">' + rg.vif[k3].toFixed(1) + '</td>'
+          + '<td><span class="bar"><i style="width:' + (mxb > 0 ? Math.abs(rg.beta[k3])/mxb*100 : 0) + '%;background:' + c3 + '"></i></span></td></tr>';
+      }
+      h += '</table></div>';
+      h += '<p class="hint">標準化β = 他の工程を一定にしたとき、その工程が1SD増えると目的変数が何SD動くか。VIF≧10 は「その工程が他と連動しすぎていて、単独の効果を分離できない」という警告。</p>';
+
+      var ds2 = dissect(d.cols, d.Y, 0.25);
+      h += '<h3 style="font-size:13px;letter-spacing:.14em;font-family:var(--mono);color:var(--dim);margin:20px 0 8px;font-weight:500">'
+        + esc(d.yName) + ' が大きい25% と 小さい25%（差 ' + fmtMin(ds2.dy) + '）の工程別の違い</h3>';
+      h += '<div class="scroll"><table><tr><th>工程</th><th class="num">上位群の平均</th><th class="num">下位群の平均</th><th class="num">差</th></tr>';
+      var idxT = [];
+      for (i=0;i<d.Y.length;i++) idxT.push(i);
+      idxT.sort(function(a,b){ return d.Y[a]-d.Y[b]; });
+      for (i=0;i<d.names.length;i++){
+        var sf2 = 0, ss2 = 0;
+        for (var y2=0;y2<ds2.k;y2++){ sf2 += d.cols[i][idxT[y2]]; ss2 += d.cols[i][idxT[idxT.length-ds2.k+y2]]; }
+        h += '<tr><td>' + esc(d.names[i]) + '</td>'
+          + '<td class="num" style="color:var(--dim)">' + fmtMin(ss2/ds2.k) + '</td>'
+          + '<td class="num" style="color:var(--dim)">' + fmtMin(sf2/ds2.k) + '</td>'
+          + '<td class="num">' + (ds2.diff[i] >= 0 ? '+' : '') + fmtMin(ds2.diff[i]) + '</td></tr>';
+      }
+      h += '</table></div>';
+      h += '<p class="hint">目的変数が工程の合計でない場合、この差の合計は目的変数の差とは一致しない（そこが分解モードとの違い）。</p>';
+    }
+  }
+
+  h += '<h3 style="font-size:13px;letter-spacing:.14em;font-family:var(--mono);color:var(--dim);margin:20px 0 8px;font-weight:500">工程どうしの相関 — 一緒に悪化するペア</h3>';
+  h += heatmap(d.names, R);
+  h += '<p class="hint">赤 = 一緒に伸びる。青 = 片方が伸びると片方が縮む。強い赤のペアは、別々の問題ではなく<strong>同じ原因（繁忙・特定の担当者・特定の曜日）を共有している</strong>疑いがある。個別に潰しても両方は直らない。</p>';
+
+  h += '<div class="row"><button type="button" onclick="exportCsv()">鑑定結果をCSVで保存</button></div>';
+  h += '<p class="hint">相関は因果ではない。この表が示すのは容疑であって、有罪判決ではない。次は再現実験室で「潰したらどうなるか」を確かめてほしい。</p>';
+  el.innerHTML = h;
+}
+
+function exportCsv(){
+  if (!LAST) return;
+  var d = LAST, i;
+  var lines = [];
+  if (d.mode === 'sum'){
+    var contrib = decompose(d.cols, d.Y), my = mean(d.Y);
+    var ds = dissect(d.cols, d.Y, 0.25);
+    lines.push(['工程','平均','占有率%','SD','相関r','分散寄与%','遅い25%との差','遅れの寄与%'].join(','));
+    for (i=0;i<d.names.length;i++){
+      lines.push([
+        '"' + String(d.names[i]).replace(/"/g,'""') + '"',
+        mean(d.cols[i]).toFixed(2), (mean(d.cols[i])/my*100).toFixed(2), sd(d.cols[i]).toFixed(2),
+        corr(d.cols[i],d.Y).toFixed(4), (contrib[i]*100).toFixed(2),
+        ds.diff[i].toFixed(2), (ds.dy !== 0 ? ds.diff[i]/ds.dy*100 : 0).toFixed(2)
+      ].join(','));
+    }
+  } else {
+    var rg = regress(d.cols, d.Y);
+    lines.push(['工程','平均','単相関r','標準化β','VIF'].join(','));
+    for (i=0;i<d.names.length;i++){
+      lines.push([
+        '"' + String(d.names[i]).replace(/"/g,'""') + '"',
+        mean(d.cols[i]).toFixed(2), (rg.rxy ? rg.rxy[i].toFixed(4) : ''),
+        (rg.singular ? '' : rg.beta[i].toFixed(4)), (rg.singular ? '' : rg.vif[i].toFixed(2))
+      ].join(','));
+    }
+  }
+  var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'kantei.csv';
+  a.click();
+}
+
+/* ---------- sample ---------- */
+function loadSample(){
+  var seed = 7;
+  var rnd = function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  var nrm = function(){ var u = 1-rnd(), v = rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+  var ln = function(m, cv, shock){ var s2 = Math.log(1+cv*cv); return Math.exp(Math.log(m) - s2/2 + Math.sqrt(s2)*nrm() + shock); };
+  var names = ['応募受付','転記','書類選考','面接日程調整','面接実施','合否連絡','内定手続き'];
+  var mu = [10, 260, 1100, 900, 1500, 300, 700];
+  var cvs = [0.2, 0.5, 0.6, 1.1, 0.4, 0.5, 0.7];
+  var rows = [['案件ID','応募日'].concat(names)];
+  for (var n=0;n<300;n++){
+    var busy = nrm()*0.35;
+    var r = ['A' + (1001+n), '2026-' + String(1 + (n % 6)).padStart(2,'0') + '-' + String(1 + (n % 27)).padStart(2,'0')];
+    for (var i=0;i<names.length;i++) r.push(ln(mu[i], cvs[i], i === 0 ? 0 : busy*0.8).toFixed(1));
+    rows.push(r);
+  }
+  document.getElementById('fileinfo').textContent = '';
+  ingest(rows);
+  document.getElementById('fileinfo').textContent = 'サンプル：300件 × 7工程（分単位・実時間ベース）';
+}
+</script>
+</body>
+</html>
